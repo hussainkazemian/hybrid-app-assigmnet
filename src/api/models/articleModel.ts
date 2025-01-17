@@ -1,6 +1,7 @@
 import db from '../../database/db';
 import {Article} from '../../types/LocalTypes';
 
+
 const getAllArticles = (): Article[] => {
   return db.prepare('SELECT * FROM articles').all() as Article[];
 };
@@ -14,11 +15,26 @@ const getArticle = (id: number | bigint): Article => {
   }
   return result;
 };
+// fetching articles with author details
+const getAllArticlesWithAuthorDetails = (): Article[] => {
+  return db
+    .prepare(`
+      SELECT
+        articles.id,
+        articles.title,
+        articles.description,
+        articles.author_id,
+        authors.name AS author_name
+      FROM articles
+      LEFT JOIN authors ON articles.author_id = authors.id
+    `)
+    .all() as Article[];
+};
 
 const createArticle = (article: Omit<Article, 'id'>): Article => {
   const stmt = db
-    .prepare('INSERT INTO articles (title, description) VALUES (?, ?)')
-    .run(article.title, article.description);
+    .prepare('INSERT INTO articles (title, description, author_id) VALUES (?, ?, ?)')
+    .run(article.title, article.description, article.author_id);
   if (!stmt.lastInsertRowid) {
     throw new Error('Failed to insert article');
   }
@@ -47,7 +63,8 @@ const deleteArticle = (id: number | bigint): void => {
   }
 };
 
-export {
+
+export {getAllArticlesWithAuthorDetails,
   getAllArticles,
   getArticle,
   createArticle,
